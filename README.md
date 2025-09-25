@@ -8,7 +8,7 @@ Publish precise `sensor_msgs/TimeReference` from **kernel-level PPS on DCD** (IM
 ![Ubuntu](https://img.shields.io/badge/Ubuntu-20.04-orange)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-> **TL;DR**: Convert **IMU → DCD** into **/dev/ppsX** (`pps_ldisc`), and publish exact trigger timestamps as `sensor_msgs/TimeReference`. **Corrects USB-serial jitter and lag** by using direct RS-232/RS-485 connections.
+> **TL;DR**: Convert **IMU → DCD** into **/dev/ppsX** (`pps_ldisc`), and publish exact trigger timestamps as `sensor_msgs/TimeReference`. **Corrects USB-serial jitter and lag** by using direct RS-232/RS-485 hardware sync.
 
 ## Table of Contents
 - [Overview](#overview)
@@ -135,6 +135,17 @@ source: "GPS_PPS"
 ```
 
 ## Hardware Setup (DCD → PPS)
+
+### DCD Pin Connection
+
+**Critical**: You must connect your **IMU trigger pulse to the DCD pin** of your serial port:
+
+1. **DCD Pin Connection**: Connect your IMU trigger signal to the **DCD (Data Carrier Detect) pin** of your RS-232 serial port
+2. **Signal Requirements**: The trigger pulse should be a clean digital signal (TTL/CMOS compatible)
+3. **Connection Types**:
+   - **RS-232**: Direct connection to DCD pin (pin 1 on DB-9)
+   - **RS-485**: Use appropriate level converter to RS-232 DCD pin
+   - **Avoid USB-serial**: Use direct RS-232/RS-485 to eliminate jitter
 
 ### PPS Device Configuration
 
