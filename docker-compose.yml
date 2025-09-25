@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  dcd-timeref-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dcd-timeref-dev
+    volumes:
+      - .:/workspace/catkin_ws/src/dcd-timeref
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+    environment:
+      - DISPLAY=${DISPLAY}
+      - ROS_DISTRO=noetic
+      - ROS_PACKAGE_PATH=/workspace/catkin_ws/src:/opt/ros/noetic/share
+    network_mode: host
+    privileged: true  # Required for PPS device access
+    devices:
+      - /dev/pps0:/dev/pps0  # Mount PPS device (if available)
+    working_dir: /workspace/catkin_ws
+    command: /bin/bash
+    stdin_open: true
+    tty: true
