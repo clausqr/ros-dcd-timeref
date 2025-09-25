@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# Build script for dcd-timeref package
+# Build script for dcd_timeref package
 # This script compiles the ROS package in the container
 
 set -e
 
-echo "Building dcd-timeref package..."
+echo "Building dcd_timeref package..."
 
 # Get the directory where this script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
