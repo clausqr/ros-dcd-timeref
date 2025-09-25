@@ -37,6 +37,35 @@ No polling. Uses **blocking `time_pps_fetch()`** (kernel timestamps). Sub-ms lat
 - **Jitter**: µs-ns precision (hardware dependent)
 - **USB-Serial**: Correct USB-serial jitter and lag by using direct RS-232/RS-485 connections
 
+### System Clock Synchronization
+
+**Critical**: This package assumes your system clock is synchronized with GPS time. The PPS events provide precise timing, but the system clock must be accurate for proper timestamp correlation.
+
+**Recommended setup with chrony**:
+```bash
+# Install chrony for GPS time synchronization
+sudo apt-get install chrony
+
+# Configure chrony to use GPS (example configuration)
+echo "refclock SHM 0 offset 0.0 delay 0.1" | sudo tee -a /etc/chrony/chrony.conf
+echo "refclock SHM 1 offset 0.0 delay 0.1" | sudo tee -a /etc/chrony/chrony.conf
+
+# Restart chrony
+sudo systemctl restart chrony
+```
+
+**Without proper clock synchronization**, the `time_ref` timestamps will be inaccurate even with precise PPS events.
+
+### Alternative Use Cases (No GPS Required)
+
+Even without GPS time synchronization, this package is valuable for:
+
+**USB Jitter Correction**: Correct for USB-serial jitter and lag in sensor data by aligning trigger timestamps to computer clock
+**Sensor Data Alignment**: Synchronize multiple sensors using precise trigger timestamps
+**Relative Timing**: Maintain precise relative timing between sensor events and computer processing
+
+**Example use case**: IMU data via USB with trigger pulse → PPS timestamp → align IMU data to precise trigger time
+
 ## Quickstart
 ```bash
 sudo apt update && sudo apt install -y pps-tools libpps-dev
