@@ -1,0 +1,10 @@
+# Ignore files for Docker build context
+.git
+.gitignore
+README.md
+*.md
+.vscode
+.idea
+*.swp
+*.swo
+*~
