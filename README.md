@@ -138,10 +138,17 @@ source: "GPS_PPS"
 
 ### DCD Pin Connection
 
-**Critical**: You must connect your **IMU trigger pulse to the DCD pin** of your serial port:
+**Critical**: You must connect your **trigger pulse source (IMU, sensor, etc.)** of your serial port:
 
-1. **DCD Pin Connection**: Connect your IMU trigger signal to the **DCD (Data Carrier Detect) pin** of your RS-232 serial port
-2. **Signal Requirements**: The trigger pulse should be a clean digital signal (TTL/CMOS compatible) or TIA RS-232 level signal according to your host serial device requirements
+1. **DCD Pin Connection**: Connect your trigger signal to the **DCD (Data Carrier Detect) pin** of your RS-232 serial port
+2. **Signal Requirements**: The trigger pulse should be a clean digital signal for DCD pin detection:
+   - **DCD Pin Logic**: 
+     - **Active (High)**: +3V to +15V (DCD pin asserted)
+     - **Inactive (Low)**: -3V to -15V (DCD pin deasserted)
+   - **Edge Detection**: Rising edge (assert) or falling edge (clear) triggers PPS event
+   - **Transition Time**: < 1μs for reliable edge detection
+   - **Signal Integrity**: Clean transitions without ringing or overshoot
+   - **Note**: DCD pin is a **control signal**, not a data signal, so timing requirements are less strict than data pins
 3. **Connection Types**:
    - **RS-232**: Direct connection to DCD pin (pin 1 on DB-9)
    - **RS-485**: Use appropriate level converter to RS-232 DCD pin
@@ -149,7 +156,29 @@ source: "GPS_PPS"
 
 ### PPS Device Configuration
 
-1. **Trigger Pulse Source**: Connect your trigger pulse source (IMU, sensor, etc.) to the DCD pin of your serial port
+1. **Kernel-level setup** (required first):
+   ```bash
+   # Load PPS line discipline
+   sudo modprobe pps_ldisc
+   
+   # Attach PPS to serial device (creates /dev/pps0)
+   sudo ldattach PPS /dev/ttyS0
+   
+   # Verify PPS device
+   ls -la /dev/pps*
+   sudo ppstest /dev/pps0
+   ```
+
+2. **Edge Detection Configuration**: Configure which edge triggers the PPS event via ROS parameter `edge`:
+   - **Rising Edge (assert)**: `edge: "assert"` - Trigger on positive transition (0 → 1)
+   - **Falling Edge (clear)**: `edge: "clear"` - Trigger on negative transition (1 → 0)  
+   - **Both Edges**: `edge: "both"` - Trigger on both transitions if relevant
+   
+   **Configuration example**:
+   ```bash
+   roslaunch dcd_timeref dcd_timeref.launch edge:=assert
+   # or in launch file: <param name="edge" value="assert" />
+   ```
 2. **Device Path**: Configure the correct device path (typically `/dev/pps0`)
 3. **Permissions**: Ensure the user has access to the PPS device:
    ```bash
