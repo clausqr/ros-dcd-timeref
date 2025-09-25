@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<launch>
+  <!-- Advanced Time Reference Publisher Node -->
+  <!-- 
+    Example with different PPS device and configuration for high-precision applications.
+    This configuration is suitable for GPS time synchronization with multiple edge detection.
+  -->
+  
+  <node pkg="dcd-timeref" type="dcd_timeref_simple" name="dcd_timeref" output="screen">
+    
+    <!-- PPS Device Configuration -->
+    <!-- Change to your actual PPS device path -->
+    <param name="pps_device" value="/dev/pps1" />
+    
+    <!-- Edge Detection Configuration -->
+    <!-- Use "both" for maximum precision, capturing both assert and clear edges -->
+    <param name="edge" value="both" />
+    
+    <!-- Message Configuration -->
+    <param name="source" value="DCD_PPS" />
+    <param name="frame_id" value="dcd_timeref" />
+    
+    <!-- Publishing Behavior -->
+    <!-- Enable both edges for maximum time reference accuracy -->
+    <param name="publish_both_edges" value="true" />
+    <param name="use_header_stamp_now" value="true" />
+    
+    <!-- Performance Configuration -->
+    <!-- Higher rate for more responsive time reference updates -->
+    <param name="queue_size" value="50" />
+    <param name="rate" value="200.0" />
+    <param name="timeout_sec" value="0.5" />
+    
+  </node>
+  
+</launch>
