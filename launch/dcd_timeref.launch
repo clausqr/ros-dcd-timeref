@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<launch>
+  <!-- Time Reference Publisher Node -->
+  <!-- 
+    Publishes sensor_msgs/TimeReference messages from PPS (Pulse Per Second) devices.
+    This node is useful for time synchronization across ROS systems.
+  -->
+  
+  <node pkg="dcd_timeref" type="dcd_timeref" name="dcd_timeref" output="screen">
+    
+    <!-- PPS Device Configuration -->
+    <param name="pps_device" value="/dev/pps0" />
+    
+    <!-- Edge Detection Configuration -->
+    <!-- Options: "assert", "clear", "both" -->
+    <param name="edge" value="assert" />
+    
+    <!-- Message Configuration -->
+    <param name="source" value="GPS_PPS" />
+    <param name="frame_id" value="gps_time" />
+    
+    <!-- Publishing Behavior -->
+    <param name="publish_both_edges" value="false" />
+    <param name="use_header_stamp_now" value="true" />
+    
+    <!-- Performance Configuration -->
+    <param name="queue_size" value="10" />
+    <param name="rate" value="100.0" />
+    <param name="timeout_sec" value="1.0" />
+    
+  </node>
+  
+</launch>
