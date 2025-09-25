@@ -1,4 +1,4 @@
-# ROS Noetic Dockerfile for dcd-timeref development
+# ROS Noetic Dockerfile for dcd_timeref development
 FROM ros:noetic-ros-base
 
 # Set environment variables
@@ -45,7 +45,7 @@ RUN echo "source /opt/ros/noetic/setup.bash" >> /root/.bashrc
 RUN echo "source /workspace/catkin_ws/devel/setup.bash" >> /root/.bashrc
 
 # Copy package source
-COPY . /workspace/catkin_ws/src/dcd-timeref/
+COPY . /workspace/catkin_ws/src/dcd_timeref/
 
 # Set working directory to catkin workspace
 WORKDIR /workspace/catkin_ws
@@ -56,7 +56,7 @@ RUN cd /workspace/catkin_ws && \
 
 # Build the package (only the simple version without PPS dependencies)
 RUN cd /workspace/catkin_ws && \
-    bash -c "source /opt/ros/noetic/setup.bash && cp src/dcd-timeref/CMakeLists-simple.txt src/dcd-timeref/CMakeLists.txt && catkin_make"
+    bash -c "source /opt/ros/noetic/setup.bash && cp src/dcd_timeref/CMakeLists-simple.txt src/dcd_timeref/CMakeLists.txt && catkin_make"
 
 # Source the workspace
 RUN echo "source /workspace/catkin_ws/devel/setup.bash" >> /root/.bashrc
