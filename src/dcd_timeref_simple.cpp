@@ -1,5 +1,5 @@
 /**
- * @file dcd-timeref-simple.cpp
+ * @file dcd_timeref_simple.cpp
  * @brief Simplified ROS node for time reference (without PPS dependencies)
  * 
  * This is a simplified version for testing compilation without PPS libraries.
@@ -119,6 +119,6 @@ int main(int argc, char** argv)
         rate.sleep();
     }
     
-    ROS_INFO("Shutting down dcd-timeref");
+    ROS_INFO("Shutting down dcd_timeref");
     return 0;
 }
