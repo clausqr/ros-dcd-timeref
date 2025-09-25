@@ -53,5 +53,5 @@ source devel/setup.bash
 
 echo "Build completed successfully!"
 echo "To run the node:"
-echo "  roslaunch dcd-timeref dcd-timeref.launch"
-echo "  rosrun dcd-timeref dcd-timeref"
+echo "  roslaunch dcd_timeref dcd_timeref.launch"
+echo "  rosrun dcd_timeref dcd_timeref"

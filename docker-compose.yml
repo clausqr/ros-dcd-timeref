@@ -5,9 +5,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: dcd-timeref-dev
+    container_name: dcd_timeref_dev
     volumes:
-      - .:/workspace/catkin_ws/src/dcd-timeref
+      - .:/workspace/catkin_ws/src/dcd_timeref
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
     environment:
       - DISPLAY=${DISPLAY}
@@ -17,6 +17,10 @@ services:
     privileged: true  # Required for PPS device access
     devices:
       - /dev/pps0:/dev/pps0  # Mount PPS device (if available)
+      - /dev/ttyUSB0:/dev/ttyUSB0  # Mount USB serial device
+      - /dev/ttyS0:/dev/ttyS0  # Mount built-in serial device
+    group_add:
+      - "dialout"  # Add dialout group for serial access
     working_dir: /workspace/catkin_ws
     command: /bin/bash
     stdin_open: true
