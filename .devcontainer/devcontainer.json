@@ -1,0 +1,66 @@
+{
+    "name": "dcd-timeref ROS Noetic Development",
+    "dockerFile": "../Dockerfile",
+    "context": "..",
+    
+    // Configure tool-specific properties
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-vscode.cpptools",
+                "ms-vscode.cmake-tools",
+                "ms-python.python",
+                "redhat.vscode-yaml",
+                "ms-vscode.vscode-json",
+                "ms-vscode.makefile-tools",
+                "twxs.cmake",
+                "ms-vscode.cpptools-extension-pack"
+            ],
+            "settings": {
+                "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+                "C_Cpp.default.intelliSenseMode": "gcc-x64",
+                "C_Cpp.default.compilerPath": "/usr/bin/gcc",
+                "C_Cpp.default.cStandard": "c11",
+                "C_Cpp.default.cppStandard": "c++14",
+                "cmake.configureOnOpen": true,
+                "cmake.buildDirectory": "${workspaceFolder}/catkin_ws/build",
+                "files.associations": {
+                    "*.launch": "xml",
+                    "*.urdf": "xml",
+                    "*.xacro": "xml"
+                }
+            }
+        }
+    },
+    
+    // Use 'forwardPorts' to make a list of ports inside the container available locally
+    "forwardPorts": [11311],
+    
+    // Use 'postCreateCommand' to run commands after the container is created
+    "postCreateCommand": "cd /workspace/catkin_ws && bash -c 'source /opt/ros/noetic/setup.bash && cp src/dcd-timeref/CMakeLists-simple.txt src/dcd-timeref/CMakeLists.txt && catkin_make'",
+    
+    // Configure container environment
+    "containerEnv": {
+        "ROS_DISTRO": "noetic",
+        "ROS_PACKAGE_PATH": "/workspace/catkin_ws/src:/opt/ros/noetic/share"
+    },
+    
+    // Mount the workspace
+    "mounts": [],
+    
+    // Set the default user
+    "remoteUser": "root",
+    
+    // Features to install
+    "features": {
+        "ghcr.io/devcontainers/features/git:1": {},
+        "ghcr.io/devcontainers/features/github-cli:1": {}
+    },
+    
+    // Lifecycle scripts
+    "onCreateCommand": "echo 'Setting up ROS Noetic development environment...'",
+    "updateContentCommand": "cd /workspace/catkin_ws && bash -c 'source /opt/ros/noetic/setup.bash && cp src/dcd-timeref/CMakeLists-simple.txt src/dcd-timeref/CMakeLists.txt && catkin_make'",
+    
+    // Workspace settings
+    "workspaceFolder": "/workspace/catkin_ws"
+}
