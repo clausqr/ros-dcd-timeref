@@ -8,7 +8,7 @@ Publish precise `sensor_msgs/TimeReference` from **kernel-level PPS on DCD** (IM
 ![Ubuntu](https://img.shields.io/badge/Ubuntu-20.04-orange)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-> **TL;DR**: Convert **IMU → DCD** into **/dev/ppsX** (`pps_ldisc`), and publish exact trigger timestamps as `sensor_msgs/TimeReference`.
+> **TL;DR**: Convert **IMU → DCD** into **/dev/ppsX** (`pps_ldisc`), and publish exact trigger timestamps as `sensor_msgs/TimeReference`. **Corrects USB-serial jitter and lag** by using direct RS-232/RS-485 connections.
 
 ## Table of Contents
 - [Overview](#overview)
