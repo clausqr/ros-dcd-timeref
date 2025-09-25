@@ -37,7 +37,7 @@
     "forwardPorts": [11311],
     
     // Use 'postCreateCommand' to run commands after the container is created
-    "postCreateCommand": "cd /workspace/catkin_ws && bash -c 'source /opt/ros/noetic/setup.bash && cp src/dcd-timeref/CMakeLists-simple.txt src/dcd-timeref/CMakeLists.txt && catkin_make'",
+    "postCreateCommand": "bash .devcontainer/postCreate.sh",
     
     // Configure container environment
     "containerEnv": {
@@ -59,8 +59,8 @@
     
     // Lifecycle scripts
     "onCreateCommand": "echo 'Setting up ROS Noetic development environment...'",
-    "updateContentCommand": "cd /workspace/catkin_ws && bash -c 'source /opt/ros/noetic/setup.bash && cp src/dcd-timeref/CMakeLists-simple.txt src/dcd-timeref/CMakeLists.txt && catkin_make'",
+    "updateContentCommand": "bash .devcontainer/postCreate.sh",
     
     // Workspace settings
-    "workspaceFolder": "/workspace/catkin_ws"
+    "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}"
 }
