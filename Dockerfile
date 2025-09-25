@@ -44,19 +44,8 @@ RUN mkdir -p /workspace/catkin_ws/src
 RUN echo "source /opt/ros/noetic/setup.bash" >> /root/.bashrc
 RUN echo "source /workspace/catkin_ws/devel/setup.bash" >> /root/.bashrc
 
-# Copy package source
-COPY . /workspace/catkin_ws/src/dcd_timeref/
-
 # Set working directory to catkin workspace
 WORKDIR /workspace/catkin_ws
-
-# Install package dependencies
-RUN cd /workspace/catkin_ws && \
-    rosdep install --from-paths src --ignore-src -r -y
-
-# Build the package (only the simple version without PPS dependencies)
-RUN cd /workspace/catkin_ws && \
-    bash -c "source /opt/ros/noetic/setup.bash && cp src/dcd_timeref/CMakeLists-simple.txt src/dcd_timeref/CMakeLists.txt && catkin_make"
 
 # Source the workspace
 RUN echo "source /workspace/catkin_ws/devel/setup.bash" >> /root/.bashrc
