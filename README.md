@@ -34,6 +34,8 @@ No polling. Uses **blocking `time_pps_fetch()`** (kernel timestamps). Sub-ms lat
 - **Latency**: sub-ms (kernel timestamp)
 - **Throughput**: 400 Hz+
 - **Memory**: tiny (no queues)
+- **Jitter**: µs-ns precision (hardware dependent)
+- **USB-Serial**: Correct USB-serial jitter and lag by using direct RS-232/RS-485 connections
 
 ## Quickstart
 ```bash
