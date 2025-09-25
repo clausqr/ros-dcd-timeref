@@ -141,7 +141,7 @@ source: "GPS_PPS"
 **Critical**: You must connect your **IMU trigger pulse to the DCD pin** of your serial port:
 
 1. **DCD Pin Connection**: Connect your IMU trigger signal to the **DCD (Data Carrier Detect) pin** of your RS-232 serial port
-2. **Signal Requirements**: The trigger pulse should be a clean digital signal (TTL/CMOS compatible)
+2. **Signal Requirements**: The trigger pulse should be a clean digital signal (TTL/CMOS compatible) or TIA RS-232 level signal according to your host serial device requirements
 3. **Connection Types**:
    - **RS-232**: Direct connection to DCD pin (pin 1 on DB-9)
    - **RS-485**: Use appropriate level converter to RS-232 DCD pin
