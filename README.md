@@ -149,7 +149,7 @@ source: "GPS_PPS"
 
 ### PPS Device Configuration
 
-1. **GPS Receiver Setup**: Ensure your GPS receiver provides PPS output
+1. **Trigger Pulse Source**: Connect your trigger pulse source (IMU, sensor, etc.) to the DCD pin of your serial port
 2. **Device Path**: Configure the correct device path (typically `/dev/pps0`)
 3. **Permissions**: Ensure the user has access to the PPS device:
    ```bash
