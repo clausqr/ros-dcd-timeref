@@ -232,8 +232,8 @@ sudo ppstest /dev/pps0
 docker-compose up --build
 
 # Or build manually
-docker build -t dcd-timeref .
-docker run --rm -it dcd-timeref
+docker build -t dcd_timeref .
+docker run --rm -it dcd_timeref
 ```
 
 ## Troubleshooting
