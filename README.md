@@ -145,7 +145,7 @@ source: "GPS_PPS"
 3. **Connection Types**:
    - **RS-232**: Direct connection to DCD pin (pin 1 on DB-9)
    - **RS-485**: Use appropriate level converter to RS-232 DCD pin
-   - **Avoid USB-serial**: Use direct RS-232/RS-485 to eliminate jitter
+   - **Avoid USB-serial**: USB-serial converters don't provide DCD pin capability - use direct RS-232/RS-485 to eliminate jitter
 
 ### PPS Device Configuration
 
