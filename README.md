@@ -279,10 +279,6 @@ rostopic echo /time_reference
 
 MIT License - see LICENSE file for details.
 
-## Author
-
-**clausqr** - hola@claus.com.ar
-
 ## Contributing
 
 1. Fork the repository
