@@ -16,8 +16,8 @@ include_directories(${catkin_INCLUDE_DIRS})
 # Create src directory if it doesn't exist
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
-# Simplified version for testing (no PPS dependencies)
-add_executable(dcd_timeref src/dcd_timeref_simple.cpp)
+# Full PPS implementation with hardware support
+add_executable(dcd_timeref src/dcd_timeref.cpp)
 target_link_libraries(dcd_timeref 
   ${catkin_LIBRARIES}
 )
