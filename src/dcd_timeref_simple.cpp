@@ -5,8 +5,8 @@
  * This is a simplified version for testing compilation without PPS libraries.
  * The full version requires libpps-dev which may not be available in all environments.
  * 
- * @author Senior Embedded Developer
- * @date 2024
+ * @author clausqr
+ * @date 2025
  */
 
 #include <ros/ros.h>

@@ -17,13 +17,13 @@ include_directories(${catkin_INCLUDE_DIRS})
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 # Simplified version for testing (no PPS dependencies)
-add_executable(dcd_timeref_simple src/dcd_timeref_simple.cpp)
-target_link_libraries(dcd_timeref_simple 
+add_executable(dcd_timeref src/dcd_timeref_simple.cpp)
+target_link_libraries(dcd_timeref 
   ${catkin_LIBRARIES}
 )
 
 # Install executables
-install(TARGETS dcd_timeref_simple
+install(TARGETS dcd_timeref
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
