@@ -67,32 +67,57 @@ Even without GPS time synchronization, this package is valuable for:
 **Example use case**: IMU data via USB with trigger pulse → PPS timestamp → align IMU data to precise trigger time
 
 ## Quickstart
+
+### Hardware Real Setup (Recommended)
 ```bash
+# Install dependencies
 sudo apt update && sudo apt install -y pps-tools libpps-dev
+
+# Setup PPS device (if not already configured)
 sudo modprobe pps_ldisc
 sudo ldattach PPS /dev/ttyUSB0   # or /dev/ttyS0
 ls -l /dev/pps*
 
-# Build
+# Build the package
 cd ~/catkin_ws/src && git clone https://github.com/clausqr/ros-noetic-dcd-timeref.git dcd_timeref && cd ..
 catkin_make
 
-# Run
-roslaunch dcd_timeref dcd_timeref.launch pps_device:=/dev/pps0 edge:=assert source:=DCD_PPS frame_id:=gps_time
+# Run with hardware PPS (requires sudo for device access)
+cd ~/catkin_ws/src/dcd-timeref
+./run_with_sudo.sh
+```
+
+### Simulation Mode (For Testing)
+```bash
+# Build and run simulation version
+cd ~/catkin_ws
+catkin_make
+source devel/setup.bash
+roslaunch dcd_timeref dcd_timeref.launch
 ```
 
 ## Features
 
-- **PPS Device Support**: Reads PPS signals from hardware devices (e.g., GPS receivers)
-- **Configurable Edge Detection**: Supports assert, clear, or both edge detection
-- **Flexible Publishing**: Configurable publishing rates and message parameters
-- **Two Implementations**: Full PPS version and simplified simulation version
-- **Docker Support**: Containerized deployment with Docker and docker-compose
-- **Launch Files**: Ready-to-use ROS launch configurations
+- **✅ Hardware PPS Support**: Reads real PPS signals from `/dev/pps0` devices
+- **✅ Simulation Mode**: Simplified version for testing without hardware
+- **✅ Configurable Edge Detection**: Supports assert, clear, or both edge detection
+- **✅ Flexible Publishing**: Configurable publishing rates and message parameters
+- **✅ Sudo Script**: Automated script for running with proper permissions
+- **✅ Docker Support**: Containerized deployment with Docker and docker-compose
+- **✅ Launch Files**: Ready-to-use ROS launch configurations
+- **✅ Real-time Performance**: Sub-millisecond latency with kernel timestamps
 
 ## Usage
 
-### Basic Usage
+### Hardware Real Mode (Recommended)
+
+```bash
+# Run with real PPS hardware (requires sudo)
+cd ~/catkin_ws/src/dcd-timeref
+./run_with_sudo.sh
+```
+
+### Simulation Mode (For Testing)
 
 ```bash
 # Launch the simple simulation version
@@ -105,11 +130,17 @@ roslaunch dcd_timeref dcd_timeref_advanced.launch
 ### Running the Node Directly
 
 ```bash
-# Simple simulation version
-rosrun dcd_timeref dcd_timeref_simple
+# Full PPS version with hardware (requires sudo)
+sudo -E env LD_LIBRARY_PATH=/opt/ros/noetic/lib:$LD_LIBRARY_PATH \
+    /home/udesa/catkin_ws/devel/lib/dcd_timeref/dcd_timeref \
+    __name:=dcd_timeref \
+    _pps_device:=/dev/pps0 \
+    _edge:=assert \
+    _source:=DCD_PPS \
+    _frame_id:=gps_time
 
-# Full PPS version (requires PPS device)
-rosrun dcd_timeref dcd_timeref
+# Simple simulation version (no hardware required)
+rosrun dcd_timeref dcd_timeref_simple
 ```
 
 ## Configuration Parameters
@@ -223,6 +254,25 @@ ls -la /dev/pps*
 
 # Test PPS device with pps-tools
 sudo ppstest /dev/pps0
+
+# Test with our script (recommended)
+cd ~/catkin_ws/src/dcd-timeref
+./run_with_sudo.sh
+```
+
+### Monitoring Output
+
+```bash
+# In another terminal, monitor the published messages
+cd ~/catkin_ws
+source devel/setup.bash
+rostopic echo /dcd_timeref/time_reference
+
+# Check topic information
+rostopic info /dcd_timeref/time_reference
+
+# Monitor publishing rate
+rostopic hz /dcd_timeref/time_reference
 ```
 
 ## Docker Usage
@@ -240,10 +290,43 @@ docker run --rm -it dcd_timeref
 
 ### Common Issues
 
-1. **Permission Denied**: Ensure proper permissions on PPS device
-2. **Device Not Found**: Check if PPS device path is correct
-3. **No PPS Signal**: Verify GPS receiver is providing PPS output
-4. **Build Errors**: Install required dependencies (`libpps-dev`)
+1. **Permission Denied**: 
+   ```bash
+   # Solution: Use the provided script with sudo
+   cd ~/catkin_ws/src/dcd-timeref
+   ./run_with_sudo.sh
+   ```
+
+2. **Device Not Found**: 
+   ```bash
+   # Check if PPS device exists
+   ls -la /dev/pps*
+   
+   # If not found, setup PPS device
+   sudo modprobe pps_ldisc
+   sudo ldattach PPS /dev/ttyS0  # or your serial device
+   ```
+
+3. **No PPS Signal**: 
+   - Verify GPS receiver is providing PPS output
+   - Check hardware connections to DCD pin
+   - Test with `sudo ppstest /dev/pps0`
+
+4. **Build Errors**: 
+   ```bash
+   # Install required dependencies
+   sudo apt install libpps-dev
+   cd ~/catkin_ws && catkin_make
+   ```
+
+5. **ROS Master Connection Issues**:
+   ```bash
+   # Start roscore in another terminal first
+   roscore
+   
+   # Then run the script
+   ./run_with_sudo.sh
+   ```
 
 ### Debug Mode
 
@@ -289,4 +372,33 @@ MIT License - see LICENSE file for details.
 
 ## Changelog
 
+- **v1.1.0**: Added hardware PPS support with sudo script, improved documentation
 - **v1.0.0**: Initial release with PPS support and simulation mode
+
+## Implementation Details
+
+### Hardware vs Simulation Mode
+
+| Feature | Hardware Mode | Simulation Mode |
+|---------|---------------|-----------------|
+| **PPS Device** | `/dev/pps0` (real) | Simulated |
+| **Timestamps** | Kernel-level precision | System clock |
+| **Latency** | Sub-millisecond | ~1ms |
+| **Dependencies** | `libpps-dev`, sudo | None |
+| **Use Case** | Production, real sensors | Testing, development |
+
+### File Structure
+
+```
+dcd_timeref/
+├── src/
+│   ├── dcd_timeref.cpp          # Full PPS implementation
+│   └── dcd_timeref_simple.cpp   # Simulation version
+├── launch/
+│   ├── dcd_timeref.launch       # Main launch file
+│   └── dcd_timeref_advanced.launch
+├── run_with_sudo.sh            # Hardware execution script
+├── CMakeLists.txt              # Build configuration
+├── package.xml                 # ROS package manifest
+└── README.md                   # This file
+```
