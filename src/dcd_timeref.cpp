@@ -5,8 +5,8 @@
  * This node reads PPS (Pulse Per Second) signals from a device and publishes
  * sensor_msgs/TimeReference messages for time synchronization across the system.
  * 
- * @author Senior Embedded Developer
- * @date 2024
+ * @author clausqr
+ * @date 2025
  */
 
 #include <ros/ros.h>
