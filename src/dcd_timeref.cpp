@@ -256,12 +256,35 @@ int main(int argc, char** argv)
                 rate.sleep();
                 continue;
             }
+            else if (errno == EACCES || errno == EPERM)
+            {
+                ROS_FATAL("Permission denied accessing PPS device: %s", strerror(errno));
+                cleanup_resources();
+                return 1;
+            }
+            else if (errno == ENODEV || errno == ENOENT)
+            {
+                ROS_FATAL("PPS device no longer available: %s", strerror(errno));
+                cleanup_resources();
+                return 1;
+            }
+            else if (errno == EINVAL)
+            {
+                ROS_FATAL("Invalid PPS operation: %s", strerror(errno));
+                cleanup_resources();
+                return 1;
+            }
+            else if (errno == EIO)
+            {
+                ROS_FATAL("I/O error on PPS device: %s", strerror(errno));
+                cleanup_resources();
+                return 1;
+            }
             else
             {
-                ROS_WARN("time_pps_fetch failed: %s", strerror(errno));
-                ros::spinOnce();
-                rate.sleep();
-                continue;
+                ROS_ERROR("Critical PPS operation failed: %s", strerror(errno));
+                cleanup_resources();
+                return 1;
             }
         }
         
