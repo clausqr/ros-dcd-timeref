@@ -17,6 +17,49 @@
 #include <errno.h>
 #include <string.h>
 #include <cassert>
+#include <signal.h>
+#include <limits>
+
+// Global variables for signal handling and cleanup
+static int g_fd = -1;
+static pps_handle_t g_handle = -1;  // Invalid handle value
+static bool g_shutdown_requested = false;
+
+/**
+ * @brief Signal handler for graceful shutdown
+ * 
+ * Handles SIGINT and SIGTERM signals to ensure proper resource cleanup
+ * 
+ * @param sig Signal number
+ */
+void signal_handler(int sig)
+{
+    ROS_INFO("Received signal %d, shutting down gracefully...", sig);
+    g_shutdown_requested = true;
+    ros::shutdown();
+}
+
+/**
+ * @brief Cleanup function for resources
+ * 
+ * Ensures all resources are properly released in the correct order
+ */
+void cleanup_resources()
+{
+    if (g_handle >= 0)
+    {
+        time_pps_destroy(g_handle);
+        g_handle = -1;
+        ROS_DEBUG("PPS handle destroyed");
+    }
+    
+    if (g_fd >= 0)
+    {
+        close(g_fd);
+        g_fd = -1;
+        ROS_DEBUG("File descriptor closed");
+    }
+}
 
 /**
  * @brief Main function for the time reference publisher node
@@ -32,6 +75,10 @@ int main(int argc, char** argv)
 {
     ros::init(argc, argv, "timeref_node");
     ros::NodeHandle nh("~");
+    
+    // Set up signal handlers for graceful shutdown
+    signal(SIGINT, signal_handler);
+    signal(SIGTERM, signal_handler);
     
     // Parameter declarations with defaults
     std::string pps_device;
@@ -106,39 +153,47 @@ int main(int argc, char** argv)
     ROS_INFO("  Rate: %.1f Hz", rate_hz);
     ROS_INFO("  Timeout: %.1f sec", timeout_sec);
     
+    // Initialize resources to invalid values for proper cleanup tracking
+    g_fd = -1;
+    g_handle = -1;
+    
     // Open PPS device
-    int fd = open(pps_device.c_str(), O_RDWR);
-    if (fd < 0)
+    g_fd = open(pps_device.c_str(), O_RDWR);
+    if (g_fd < 0)
     {
         ROS_FATAL("Cannot open PPS device %s: %s", pps_device.c_str(), strerror(errno));
         return 1;
     }
     
     // Create PPS handle
-    pps_handle_t handle;
-    if (time_pps_create(fd, &handle) < 0)
+    if (time_pps_create(g_fd, &g_handle) < 0)
     {
         ROS_FATAL("time_pps_create failed: %s", strerror(errno));
-        close(fd);
+        close(g_fd);
+        g_fd = -1;  // Mark as cleaned up
         return 1;
     }
     
     // Configure PPS parameters
     pps_params_t params;
-    if (time_pps_getparams(handle, &params) < 0)
+    if (time_pps_getparams(g_handle, &params) < 0)
     {
         ROS_FATAL("time_pps_getparams failed: %s", strerror(errno));
-        time_pps_destroy(handle);
-        close(fd);
+        time_pps_destroy(g_handle);
+        g_handle = -1;  // Mark as cleaned up
+        close(g_fd);
+        g_fd = -1;  // Mark as cleaned up
         return 1;
     }
     
     params.mode = pps_mode | PPS_TSFMT_TSPEC;
-    if (time_pps_setparams(handle, &params) < 0)
+    if (time_pps_setparams(g_handle, &params) < 0)
     {
         ROS_FATAL("time_pps_setparams failed: %s", strerror(errno));
-        time_pps_destroy(handle);
-        close(fd);
+        time_pps_destroy(g_handle);
+        g_handle = -1;  // Mark as cleaned up
+        close(g_fd);
+        g_fd = -1;  // Mark as cleaned up
         return 1;
     }
     
@@ -161,10 +216,10 @@ int main(int argc, char** argv)
     
     ROS_INFO("Starting PPS monitoring loop");
     
-    while (ros::ok())
+    while (ros::ok() && !g_shutdown_requested)
     {
         pps_info_t info;
-        int ret = time_pps_fetch(handle, PPS_TSFMT_TSPEC, &info, &timeout);
+        int ret = time_pps_fetch(g_handle, PPS_TSFMT_TSPEC, &info, &timeout);
         
         if (ret < 0)
         {
@@ -238,10 +293,9 @@ int main(int argc, char** argv)
         rate.sleep();
     }
     
-    // Cleanup
+    // Cleanup - ensure all resources are properly released
     ROS_INFO("Shutting down timeref_node");
-    time_pps_destroy(handle);
-    close(fd);
+    cleanup_resources();
     
     return 0;
 }
