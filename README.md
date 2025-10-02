@@ -160,8 +160,8 @@ roslaunch dcd_timeref dcd_timeref.launch
 # Launch with custom parameters
 roslaunch dcd_timeref dcd_timeref.launch pps_device:=/dev/pps1 edge:=clear source:=GPS_PPS
 
-# Launch advanced configuration with monitoring
-roslaunch dcd_timeref dcd_timeref_advanced.launch
+# Launch with custom parameters
+roslaunch dcd_timeref dcd_timeref.launch pps_device:=/dev/pps1 edge:=both rate:=200.0
 ```
 
 #### Simulation Mode (For Testing)
@@ -177,7 +177,7 @@ roslaunch dcd_timeref dcd_timeref_simple.launch rate:=10.0 source:=SIMULATED_PPS
 ```bash
 # Run with real PPS hardware (requires sudo - use only if launch files don't work)
 cd ~/catkin_ws/src/dcd-timeref
-./run_with_sudo.sh
+rosrun dcd_timeref dcd_timeref
 ```
 
 ### Running the Node Directly
@@ -310,7 +310,7 @@ sudo ppstest /dev/pps0
 
 # Test with our script (recommended)
 cd ~/catkin_ws/src/dcd-timeref
-./run_with_sudo.sh
+rosrun dcd_timeref dcd_timeref
 ```
 
 ### Monitoring Output
@@ -356,7 +356,7 @@ docker run --rm -it dcd_timeref
    
    # Solution 2: Use the provided script with sudo (fallback)
    cd ~/catkin_ws/src/dcd-timeref
-   ./run_with_sudo.sh
+   rosrun dcd_timeref dcd_timeref
    ```
 
 2. **Device Not Found**: 
@@ -399,7 +399,7 @@ docker run --rm -it dcd_timeref
    roscore
    
    # Then run the script
-   ./run_with_sudo.sh
+   rosrun dcd_timeref dcd_timeref
    ```
 
 ### Debug Mode
@@ -470,9 +470,7 @@ dcd_timeref/
 │   └── dcd_timeref_simple.cpp   # Simulation version
 ├── launch/
 │   ├── dcd_timeref.launch       # Main launch file (hardware PPS)
-│   ├── dcd_timeref_simple.launch # Simple simulation launch
-│   └── dcd_timeref_advanced.launch # Advanced configuration with monitoring
-├── run_with_sudo.sh            # Legacy hardware execution script (fallback)
+│   └── dcd_timeref_simple.launch # Simple simulation launch
 ├── CMakeLists.txt              # Build configuration
 ├── package.xml                 # ROS package manifest
 └── README.md                   # This file
