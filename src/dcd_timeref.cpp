@@ -117,7 +117,9 @@ int main(int argc, char** argv)
     }
     
     // Ensure path starts with /dev/pps for security
-    if (pps_device.length() < 9 || pps_device.substr(0, 9) != "/dev/pps")
+    const std::string expected_prefix = "/dev/pps";
+    if (pps_device.length() < expected_prefix.length() || 
+        pps_device.substr(0, expected_prefix.length()) != expected_prefix)
     {
         ROS_FATAL("PPS device must be in /dev/pps* namespace: %s", pps_device.c_str());
         return 1;
