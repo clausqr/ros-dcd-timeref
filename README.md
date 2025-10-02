@@ -103,7 +103,21 @@ sudo udevadm trigger
 # Logout and login again for group changes to take effect
 ```
 
-#### 4. Build and Run
+#### 4. Configure ROS Libraries (Required)
+```bash
+# Configure system to find ROS libraries (required for proper execution)
+echo "/opt/ros/noetic/lib" | sudo tee /etc/ld.so.conf.d/ros-noetic.conf
+echo "$(pwd)/devel/lib" | sudo tee -a /etc/ld.so.conf.d/ros-noetic.conf
+
+# Update library cache
+sudo ldconfig
+
+# Verify configuration works
+ldd devel/lib/dcd_timeref/dcd_timeref | grep "not found"
+# Should return no output if configuration is correct
+```
+
+#### 5. Build and Run
 ```bash
 # Build the package
 cd ~/catkin_ws/src && git clone https://github.com/clausqr/ros-noetic-dcd-timeref.git dcd_timeref && cd ..
@@ -367,7 +381,19 @@ docker run --rm -it dcd_timeref
    cd ~/catkin_ws && catkin_make
    ```
 
-5. **ROS Master Connection Issues**:
+5. **Library Loading Issues** (libxmlrpcpp.so: cannot open shared object file):
+   ```bash
+   # Configure system to find ROS libraries
+   echo "/opt/ros/noetic/lib" | sudo tee /etc/ld.so.conf.d/ros-noetic.conf
+   echo "$(pwd)/devel/lib" | sudo tee -a /etc/ld.so.conf.d/ros-noetic.conf
+   sudo ldconfig
+   
+   # Verify the fix
+   ldd devel/lib/dcd_timeref/dcd_timeref | grep "not found"
+   # Should return no output if fixed
+   ```
+
+6. **ROS Master Connection Issues**:
    ```bash
    # Start roscore in another terminal first
    roscore
