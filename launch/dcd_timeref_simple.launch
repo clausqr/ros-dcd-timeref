@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<launch>
+  <!-- Arguments -->
+  <arg name="source" default="SIMULATED_PPS" doc="Source identifier for messages"/>
+  <arg name="frame_id" default="" doc="Frame ID for message headers"/>
+  <arg name="use_header_stamp_now" default="true" doc="Use current time for header stamp"/>
+  <arg name="queue_size" default="10" doc="Publisher queue size"/>
+  <arg name="rate" default="1.0" doc="Publishing rate (Hz) for simulation"/>
+  
+  <!-- Simple dcd_timeref node (simulation) -->
+  <node name="dcd_timeref" pkg="dcd_timeref" type="dcd_timeref_simple" 
+        output="screen" respawn="true">
+    <param name="source" value="$(arg source)"/>
+    <param name="frame_id" value="$(arg frame_id)"/>
+    <param name="use_header_stamp_now" value="$(arg use_header_stamp_now)"/>
+    <param name="queue_size" value="$(arg queue_size)"/>
+    <param name="rate" value="$(arg rate)"/>
+  </node>
+</launch>

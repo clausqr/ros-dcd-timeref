@@ -1,36 +1,31 @@
 <?xml version="1.0"?>
 <launch>
-  <!-- Advanced Time Reference Publisher Node -->
-  <!-- 
-    Example with different PPS device and configuration for high-precision applications.
-    This configuration is suitable for GPS time synchronization with multiple edge detection.
-  -->
+  <!-- Arguments -->
+  <arg name="pps_device" default="/dev/pps0" doc="PPS device path"/>
+  <arg name="edge" default="both" doc="Edge detection: assert, clear, or both"/>
+  <arg name="source" default="DCD_PPS" doc="Source identifier for messages"/>
+  <arg name="frame_id" default="gps_time" doc="Frame ID for message headers"/>
+  <arg name="publish_both_edges" default="true" doc="Publish on both edges"/>
+  <arg name="use_header_stamp_now" default="true" doc="Use current time for header stamp"/>
+  <arg name="queue_size" default="50" doc="Publisher queue size"/>
+  <arg name="rate" default="200.0" doc="Publishing rate (Hz)"/>
+  <arg name="timeout_sec" default="0.5" doc="Timeout for PPS operations"/>
   
-  <node pkg="dcd_timeref" type="dcd_timeref" name="dcd_timeref" output="screen">
-    
-    <!-- PPS Device Configuration -->
-    <!-- Change to your actual PPS device path -->
-    <param name="pps_device" value="/dev/pps1" />
-    
-    <!-- Edge Detection Configuration -->
-    <!-- Use "both" for maximum precision, capturing both assert and clear edges -->
-    <param name="edge" value="both" />
-    
-    <!-- Message Configuration -->
-    <param name="source" value="DCD_PPS" />
-    <param name="frame_id" value="dcd_timeref" />
-    
-    <!-- Publishing Behavior -->
-    <!-- Enable both edges for maximum time reference accuracy -->
-    <param name="publish_both_edges" value="true" />
-    <param name="use_header_stamp_now" value="true" />
-    
-    <!-- Performance Configuration -->
-    <!-- Higher rate for more responsive time reference updates -->
-    <param name="queue_size" value="50" />
-    <param name="rate" value="200.0" />
-    <param name="timeout_sec" value="0.5" />
-    
+  <!-- Main dcd_timeref node with advanced configuration -->
+  <node name="dcd_timeref" pkg="dcd_timeref" type="dcd_timeref" 
+        output="screen" respawn="true">
+    <param name="pps_device" value="$(arg pps_device)"/>
+    <param name="edge" value="$(arg edge)"/>
+    <param name="source" value="$(arg source)"/>
+    <param name="frame_id" value="$(arg frame_id)"/>
+    <param name="publish_both_edges" value="$(arg publish_both_edges)"/>
+    <param name="use_header_stamp_now" value="$(arg use_header_stamp_now)"/>
+    <param name="queue_size" value="$(arg queue_size)"/>
+    <param name="rate" value="$(arg rate)"/>
+    <param name="timeout_sec" value="$(arg timeout_sec)"/>
   </node>
   
+  <!-- Optional: Add monitoring node -->
+  <node name="timeref_monitor" pkg="rostopic" type="rostopic" 
+        args="hz /dcd_timeref/time_reference" output="screen" respawn="true"/>
 </launch>

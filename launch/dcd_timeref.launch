@@ -1,33 +1,27 @@
 <?xml version="1.0"?>
 <launch>
-  <!-- Time Reference Publisher Node -->
-  <!-- 
-    Publishes sensor_msgs/TimeReference messages from PPS (Pulse Per Second) devices.
-    This node is useful for time synchronization across ROS systems.
-  -->
+  <!-- Arguments -->
+  <arg name="pps_device" default="/dev/pps0" doc="PPS device path"/>
+  <arg name="edge" default="assert" doc="Edge detection: assert, clear, or both"/>
+  <arg name="source" default="DCD_PPS" doc="Source identifier for messages"/>
+  <arg name="frame_id" default="lidar_trigger_time" doc="Frame ID for message headers"/>
+  <arg name="publish_both_edges" default="false" doc="Publish on both edges"/>
+  <arg name="use_header_stamp_now" default="true" doc="Use current time for header stamp"/>
+  <arg name="queue_size" default="10" doc="Publisher queue size"/>
+  <arg name="rate" default="100.0" doc="Publishing rate (Hz)"/>
+  <arg name="timeout_sec" default="1.0" doc="Timeout for PPS operations"/>
   
-  <node pkg="dcd_timeref" type="dcd_timeref" name="dcd_timeref" output="screen">
-    
-    <!-- PPS Device Configuration -->
-    <param name="pps_device" value="/dev/pps0" />
-    
-    <!-- Edge Detection Configuration -->
-    <!-- Options: "assert", "clear", "both" -->
-    <param name="edge" value="assert" />
-    
-    <!-- Message Configuration -->
-    <param name="source" value="GPS_PPS" />
-    <param name="frame_id" value="gps_time" />
-    
-    <!-- Publishing Behavior -->
-    <param name="publish_both_edges" value="false" />
-    <param name="use_header_stamp_now" value="true" />
-    
-    <!-- Performance Configuration -->
-    <param name="queue_size" value="10" />
-    <param name="rate" value="100.0" />
-    <param name="timeout_sec" value="1.0" />
-    
+  <!-- Main dcd_timeref node -->
+  <node name="dcd_timeref" pkg="dcd_timeref" type="dcd_timeref" 
+        output="screen" respawn="true">
+    <param name="pps_device" value="$(arg pps_device)"/>
+    <param name="edge" value="$(arg edge)"/>
+    <param name="source" value="$(arg source)"/>
+    <param name="frame_id" value="$(arg frame_id)"/>
+    <param name="publish_both_edges" value="$(arg publish_both_edges)"/>
+    <param name="use_header_stamp_now" value="$(arg use_header_stamp_now)"/>
+    <param name="queue_size" value="$(arg queue_size)"/>
+    <param name="rate" value="$(arg rate)"/>
+    <param name="timeout_sec" value="$(arg timeout_sec)"/>
   </node>
-  
 </launch>
