@@ -102,6 +102,34 @@ int main(int argc, char** argv)
     nh.param<double>("rate", rate_hz, 100.0);
     nh.param<double>("timeout_sec", timeout_sec, 1.0);
     
+    // Validate PPS device path to prevent path traversal attacks
+    if (pps_device.empty())
+    {
+        ROS_FATAL("PPS device path cannot be empty");
+        return 1;
+    }
+    
+    // Check for path traversal attempts
+    if (pps_device.find("..") != std::string::npos)
+    {
+        ROS_FATAL("Invalid PPS device path (path traversal detected): %s", pps_device.c_str());
+        return 1;
+    }
+    
+    // Ensure path starts with /dev/pps for security
+    if (pps_device.length() < 9 || pps_device.substr(0, 9) != "/dev/pps")
+    {
+        ROS_FATAL("PPS device must be in /dev/pps* namespace: %s", pps_device.c_str());
+        return 1;
+    }
+    
+    // Additional security: ensure path is not too long
+    if (pps_device.length() > 64)
+    {
+        ROS_FATAL("PPS device path too long (max 64 chars): %s", pps_device.c_str());
+        return 1;
+    }
+    
     // Validate parameters
     if (queue_size <= 0)
     {
