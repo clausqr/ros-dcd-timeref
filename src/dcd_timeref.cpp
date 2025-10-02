@@ -1,12 +1,12 @@
 /**
- * @file timeref_node.cpp
+ * @file dcd_timeref.cpp
  * @brief ROS node for publishing time reference from PPS devices
  * 
  * This node reads PPS (Pulse Per Second) signals from a device and publishes
  * sensor_msgs/TimeReference messages for time synchronization across the system.
  * 
- * @author Senior Embedded Developer
- * @date 2024
+ * @author clausqr
+ * @date 2025
  */
 
 #include <ros/ros.h>
@@ -17,6 +17,49 @@
 #include <errno.h>
 #include <string.h>
 #include <cassert>
+#include <signal.h>
+#include <limits>
+
+// Global variables for signal handling and cleanup
+static int g_fd = -1;
+static pps_handle_t g_handle = -1;  // Invalid handle value
+static bool g_shutdown_requested = false;
+
+/**
+ * @brief Signal handler for graceful shutdown
+ * 
+ * Handles SIGINT and SIGTERM signals to ensure proper resource cleanup
+ * 
+ * @param sig Signal number
+ */
+void signal_handler(int sig)
+{
+    ROS_INFO("Received signal %d, shutting down gracefully...", sig);
+    g_shutdown_requested = true;
+    ros::shutdown();
+}
+
+/**
+ * @brief Cleanup function for resources
+ * 
+ * Ensures all resources are properly released in the correct order
+ */
+void cleanup_resources()
+{
+    if (g_handle >= 0)
+    {
+        time_pps_destroy(g_handle);
+        g_handle = -1;
+        ROS_DEBUG("PPS handle destroyed");
+    }
+    
+    if (g_fd >= 0)
+    {
+        close(g_fd);
+        g_fd = -1;
+        ROS_DEBUG("File descriptor closed");
+    }
+}
 
 /**
  * @brief Main function for the time reference publisher node
@@ -30,8 +73,12 @@
  */
 int main(int argc, char** argv)
 {
-    ros::init(argc, argv, "timeref_node");
+    ros::init(argc, argv, "dcd_timeref");
     ros::NodeHandle nh("~");
+    
+    // Set up signal handlers for graceful shutdown
+    signal(SIGINT, signal_handler);
+    signal(SIGTERM, signal_handler);
     
     // Parameter declarations with defaults
     std::string pps_device;
@@ -54,6 +101,36 @@ int main(int argc, char** argv)
     nh.param<int>("queue_size", queue_size, 10);
     nh.param<double>("rate", rate_hz, 100.0);
     nh.param<double>("timeout_sec", timeout_sec, 1.0);
+    
+    // Validate PPS device path to prevent path traversal attacks
+    if (pps_device.empty())
+    {
+        ROS_FATAL("PPS device path cannot be empty");
+        return 1;
+    }
+    
+    // Check for path traversal attempts
+    if (pps_device.find("..") != std::string::npos)
+    {
+        ROS_FATAL("Invalid PPS device path (path traversal detected): %s", pps_device.c_str());
+        return 1;
+    }
+    
+    // Ensure path starts with /dev/pps for security
+    const std::string expected_prefix = "/dev/pps";
+    if (pps_device.length() < expected_prefix.length() || 
+        pps_device.substr(0, expected_prefix.length()) != expected_prefix)
+    {
+        ROS_FATAL("PPS device must be in /dev/pps* namespace: %s", pps_device.c_str());
+        return 1;
+    }
+    
+    // Additional security: ensure path is not too long
+    if (pps_device.length() > 64)
+    {
+        ROS_FATAL("PPS device path too long (max 64 chars): %s", pps_device.c_str());
+        return 1;
+    }
     
     // Validate parameters
     if (queue_size <= 0)
@@ -106,39 +183,47 @@ int main(int argc, char** argv)
     ROS_INFO("  Rate: %.1f Hz", rate_hz);
     ROS_INFO("  Timeout: %.1f sec", timeout_sec);
     
+    // Initialize resources to invalid values for proper cleanup tracking
+    g_fd = -1;
+    g_handle = -1;
+    
     // Open PPS device
-    int fd = open(pps_device.c_str(), O_RDWR);
-    if (fd < 0)
+    g_fd = open(pps_device.c_str(), O_RDWR);
+    if (g_fd < 0)
     {
         ROS_FATAL("Cannot open PPS device %s: %s", pps_device.c_str(), strerror(errno));
         return 1;
     }
     
     // Create PPS handle
-    pps_handle_t handle;
-    if (time_pps_create(fd, &handle) < 0)
+    if (time_pps_create(g_fd, &g_handle) < 0)
     {
         ROS_FATAL("time_pps_create failed: %s", strerror(errno));
-        close(fd);
+        close(g_fd);
+        g_fd = -1;  // Mark as cleaned up
         return 1;
     }
     
     // Configure PPS parameters
     pps_params_t params;
-    if (time_pps_getparams(handle, &params) < 0)
+    if (time_pps_getparams(g_handle, &params) < 0)
     {
         ROS_FATAL("time_pps_getparams failed: %s", strerror(errno));
-        time_pps_destroy(handle);
-        close(fd);
+        time_pps_destroy(g_handle);
+        g_handle = -1;  // Mark as cleaned up
+        close(g_fd);
+        g_fd = -1;  // Mark as cleaned up
         return 1;
     }
     
     params.mode = pps_mode | PPS_TSFMT_TSPEC;
-    if (time_pps_setparams(handle, &params) < 0)
+    if (time_pps_setparams(g_handle, &params) < 0)
     {
         ROS_FATAL("time_pps_setparams failed: %s", strerror(errno));
-        time_pps_destroy(handle);
-        close(fd);
+        time_pps_destroy(g_handle);
+        g_handle = -1;  // Mark as cleaned up
+        close(g_fd);
+        g_fd = -1;  // Mark as cleaned up
         return 1;
     }
     
@@ -153,18 +238,44 @@ int main(int argc, char** argv)
     }
     ROS_INFO("Subscriber(s) connected, starting PPS monitoring");
     
+    // Validate timeout bounds to prevent integer overflow
+    if (timeout_sec <= 0.0)
+    {
+        ROS_FATAL("timeout_sec must be positive, got %f", timeout_sec);
+        cleanup_resources();
+        return 1;
+    }
+    
+    // Use a practical limit for timeouts (1 hour = 3600 seconds)
+    const double MAX_TIMEOUT_SEC = 3600.0;
+    if (timeout_sec > MAX_TIMEOUT_SEC)
+    {
+        ROS_FATAL("timeout_sec too large: %f (max: %.1f seconds)", timeout_sec, MAX_TIMEOUT_SEC);
+        cleanup_resources();
+        return 1;
+    }
+    
     // Main loop variables
     ros::Rate rate(rate_hz);
     pps_seq_t last_assert_seq = 0;
     pps_seq_t last_clear_seq = 0;
-    struct timespec timeout = {static_cast<time_t>(timeout_sec), 0};
+    
+    // Safe conversion with bounds checking
+    time_t timeout_sec_int = static_cast<time_t>(timeout_sec);
+    long timeout_nsec = static_cast<long>((timeout_sec - timeout_sec_int) * 1000000000L);
+    
+    // Ensure nanoseconds are within valid range [0, 999999999]
+    if (timeout_nsec < 0) timeout_nsec = 0;
+    if (timeout_nsec > 999999999L) timeout_nsec = 999999999L;
+    
+    struct timespec timeout = {timeout_sec_int, timeout_nsec};
     
     ROS_INFO("Starting PPS monitoring loop");
     
-    while (ros::ok())
+    while (ros::ok() && !g_shutdown_requested)
     {
         pps_info_t info;
-        int ret = time_pps_fetch(handle, PPS_TSFMT_TSPEC, &info, &timeout);
+        int ret = time_pps_fetch(g_handle, PPS_TSFMT_TSPEC, &info, &timeout);
         
         if (ret < 0)
         {
@@ -175,12 +286,35 @@ int main(int argc, char** argv)
                 rate.sleep();
                 continue;
             }
+            else if (errno == EACCES || errno == EPERM)
+            {
+                ROS_FATAL("Permission denied accessing PPS device: %s", strerror(errno));
+                cleanup_resources();
+                return 1;
+            }
+            else if (errno == ENODEV || errno == ENOENT)
+            {
+                ROS_FATAL("PPS device no longer available: %s", strerror(errno));
+                cleanup_resources();
+                return 1;
+            }
+            else if (errno == EINVAL)
+            {
+                ROS_FATAL("Invalid PPS operation: %s", strerror(errno));
+                cleanup_resources();
+                return 1;
+            }
+            else if (errno == EIO)
+            {
+                ROS_FATAL("I/O error on PPS device: %s", strerror(errno));
+                cleanup_resources();
+                return 1;
+            }
             else
             {
-                ROS_WARN("time_pps_fetch failed: %s", strerror(errno));
-                ros::spinOnce();
-                rate.sleep();
-                continue;
+                ROS_ERROR("Critical PPS operation failed: %s", strerror(errno));
+                cleanup_resources();
+                return 1;
             }
         }
         
@@ -238,10 +372,9 @@ int main(int argc, char** argv)
         rate.sleep();
     }
     
-    // Cleanup
-    ROS_INFO("Shutting down timeref_node");
-    time_pps_destroy(handle);
-    close(fd);
+    // Cleanup - ensure all resources are properly released
+    ROS_INFO("Shutting down dcd_timeref");
+    cleanup_resources();
     
     return 0;
 }

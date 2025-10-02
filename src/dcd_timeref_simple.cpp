@@ -13,6 +13,24 @@
 #include <sensor_msgs/TimeReference.h>
 #include <chrono>
 #include <thread>
+#include <signal.h>
+
+// Global variables for signal handling
+static bool g_shutdown_requested = false;
+
+/**
+ * @brief Signal handler for graceful shutdown
+ * 
+ * Handles SIGINT and SIGTERM signals to ensure proper shutdown
+ * 
+ * @param sig Signal number
+ */
+void signal_handler(int sig)
+{
+    ROS_INFO("Received signal %d, shutting down gracefully...", sig);
+    g_shutdown_requested = true;
+    ros::shutdown();
+}
 
 /**
  * @brief Simplified time reference publisher node
@@ -28,6 +46,10 @@ int main(int argc, char** argv)
 {
     ros::init(argc, argv, "dcd_timeref");
     ros::NodeHandle nh("~");
+    
+    // Set up signal handlers for graceful shutdown
+    signal(SIGINT, signal_handler);
+    signal(SIGTERM, signal_handler);
     
     // Parameter declarations with defaults
     std::string source;
@@ -81,7 +103,7 @@ int main(int argc, char** argv)
     
     ROS_INFO("Starting time reference simulation loop");
     
-    while (ros::ok())
+    while (ros::ok() && !g_shutdown_requested)
     {
         // Simulate PPS signal (every second)
         auto now = std::chrono::steady_clock::now();

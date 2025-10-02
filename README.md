@@ -69,22 +69,63 @@ Even without GPS time synchronization, this package is valuable for:
 ## Quickstart
 
 ### Hardware Real Setup (Recommended)
+
+#### 1. Install Dependencies
 ```bash
 # Install dependencies
 sudo apt update && sudo apt install -y pps-tools libpps-dev
+```
 
+#### 2. Setup PPS Device
+```bash
 # Setup PPS device (if not already configured)
 sudo modprobe pps_ldisc
 sudo ldattach PPS /dev/ttyUSB0   # or /dev/ttyS0
 ls -l /dev/pps*
+```
 
+#### 3. Configure Device Permissions (No Sudo Required)
+```bash
+# Add user to dialout group for serial device access
+sudo usermod -a -G dialout $USER
+
+# Set specific permissions for PPS devices
+sudo chmod 666 /dev/pps0
+sudo chmod 666 /dev/pps1
+
+# Make permissions persistent (add to udev rules)
+echo 'SUBSYSTEM=="pps", MODE="0666", GROUP="dialout"' | sudo tee /etc/udev/rules.d/99-pps-permissions.rules
+
+# Reload udev rules
+sudo udevadm control --reload-rules
+sudo udevadm trigger
+
+# Logout and login again for group changes to take effect
+```
+
+#### 4. Configure ROS Libraries (Required)
+```bash
+# Configure system to find ROS libraries (required for proper execution)
+echo "/opt/ros/noetic/lib" | sudo tee /etc/ld.so.conf.d/ros-noetic.conf
+echo "$(pwd)/devel/lib" | sudo tee -a /etc/ld.so.conf.d/ros-noetic.conf
+
+# Update library cache
+sudo ldconfig
+
+# Verify configuration works
+ldd devel/lib/dcd_timeref/dcd_timeref | grep "not found"
+# Should return no output if configuration is correct
+```
+
+#### 5. Build and Run
+```bash
 # Build the package
 cd ~/catkin_ws/src && git clone https://github.com/clausqr/ros-noetic-dcd-timeref.git dcd_timeref && cd ..
 catkin_make
 
-# Run with hardware PPS (requires sudo for device access)
+# Run with launch files (no sudo required)
 cd ~/catkin_ws/src/dcd-timeref
-./run_with_sudo.sh
+roslaunch dcd_timeref dcd_timeref.launch
 ```
 
 ### Simulation Mode (For Testing)
@@ -109,22 +150,34 @@ roslaunch dcd_timeref dcd_timeref.launch
 
 ## Usage
 
-### Hardware Real Mode (Recommended)
+### Launch Files (Recommended)
 
+#### Basic Launch (Hardware PPS)
 ```bash
-# Run with real PPS hardware (requires sudo)
-cd ~/catkin_ws/src/dcd-timeref
-./run_with_sudo.sh
-```
-
-### Simulation Mode (For Testing)
-
-```bash
-# Launch the simple simulation version
+# Launch with default parameters (no sudo required after permission setup)
 roslaunch dcd_timeref dcd_timeref.launch
 
 # Launch with custom parameters
-roslaunch dcd_timeref dcd_timeref_advanced.launch
+roslaunch dcd_timeref dcd_timeref.launch pps_device:=/dev/pps1 edge:=clear source:=GPS_PPS
+
+# Launch with custom parameters
+roslaunch dcd_timeref dcd_timeref.launch pps_device:=/dev/pps1 edge:=both rate:=200.0
+```
+
+#### Simulation Mode (For Testing)
+```bash
+# Launch the simple simulation version (no hardware required)
+roslaunch dcd_timeref dcd_timeref_simple.launch
+
+# Launch simulation with custom parameters
+roslaunch dcd_timeref dcd_timeref_simple.launch rate:=10.0 source:=SIMULATED_PPS
+```
+
+### Legacy Script (Fallback)
+```bash
+# Run with real PPS hardware (requires sudo - use only if launch files don't work)
+cd ~/catkin_ws/src/dcd-timeref
+rosrun dcd_timeref dcd_timeref
 ```
 
 ### Running the Node Directly
@@ -257,7 +310,7 @@ sudo ppstest /dev/pps0
 
 # Test with our script (recommended)
 cd ~/catkin_ws/src/dcd-timeref
-./run_with_sudo.sh
+rosrun dcd_timeref dcd_timeref
 ```
 
 ### Monitoring Output
@@ -292,9 +345,18 @@ docker run --rm -it dcd_timeref
 
 1. **Permission Denied**: 
    ```bash
-   # Solution: Use the provided script with sudo
+   # Solution 1: Setup device permissions (recommended)
+   sudo usermod -a -G dialout $USER
+   sudo chmod 666 /dev/pps0
+   echo 'SUBSYSTEM=="pps", MODE="0666", GROUP="dialout"' | sudo tee /etc/udev/rules.d/99-pps-permissions.rules
+   sudo udevadm control --reload-rules
+   sudo udevadm trigger
+   # Logout and login again, then use:
+   roslaunch dcd_timeref dcd_timeref.launch
+   
+   # Solution 2: Use the provided script with sudo (fallback)
    cd ~/catkin_ws/src/dcd-timeref
-   ./run_with_sudo.sh
+   rosrun dcd_timeref dcd_timeref
    ```
 
 2. **Device Not Found**: 
@@ -319,13 +381,25 @@ docker run --rm -it dcd_timeref
    cd ~/catkin_ws && catkin_make
    ```
 
-5. **ROS Master Connection Issues**:
+5. **Library Loading Issues** (libxmlrpcpp.so: cannot open shared object file):
+   ```bash
+   # Configure system to find ROS libraries
+   echo "/opt/ros/noetic/lib" | sudo tee /etc/ld.so.conf.d/ros-noetic.conf
+   echo "$(pwd)/devel/lib" | sudo tee -a /etc/ld.so.conf.d/ros-noetic.conf
+   sudo ldconfig
+   
+   # Verify the fix
+   ldd devel/lib/dcd_timeref/dcd_timeref | grep "not found"
+   # Should return no output if fixed
+   ```
+
+6. **ROS Master Connection Issues**:
    ```bash
    # Start roscore in another terminal first
    roscore
    
    # Then run the script
-   ./run_with_sudo.sh
+   rosrun dcd_timeref dcd_timeref
    ```
 
 ### Debug Mode
@@ -395,9 +469,8 @@ dcd_timeref/
 │   ├── dcd_timeref.cpp          # Full PPS implementation
 │   └── dcd_timeref_simple.cpp   # Simulation version
 ├── launch/
-│   ├── dcd_timeref.launch       # Main launch file
-│   └── dcd_timeref_advanced.launch
-├── run_with_sudo.sh            # Hardware execution script
+│   ├── dcd_timeref.launch       # Main launch file (hardware PPS)
+│   └── dcd_timeref_simple.launch # Simple simulation launch
 ├── CMakeLists.txt              # Build configuration
 ├── package.xml                 # ROS package manifest
 └── README.md                   # This file
