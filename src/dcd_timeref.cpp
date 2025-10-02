@@ -1,5 +1,5 @@
 /**
- * @file timeref_node.cpp
+ * @file dcd_timeref.cpp
  * @brief ROS node for publishing time reference from PPS devices
  * 
  * This node reads PPS (Pulse Per Second) signals from a device and publishes
@@ -73,7 +73,7 @@ void cleanup_resources()
  */
 int main(int argc, char** argv)
 {
-    ros::init(argc, argv, "timeref_node");
+    ros::init(argc, argv, "dcd_timeref");
     ros::NodeHandle nh("~");
     
     // Set up signal handlers for graceful shutdown
@@ -373,7 +373,7 @@ int main(int argc, char** argv)
     }
     
     // Cleanup - ensure all resources are properly released
-    ROS_INFO("Shutting down timeref_node");
+    ROS_INFO("Shutting down dcd_timeref");
     cleanup_resources();
     
     return 0;
