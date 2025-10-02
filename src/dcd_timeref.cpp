@@ -208,11 +208,37 @@ int main(int argc, char** argv)
     }
     ROS_INFO("Subscriber(s) connected, starting PPS monitoring");
     
+    // Validate timeout bounds to prevent integer overflow
+    if (timeout_sec <= 0.0)
+    {
+        ROS_FATAL("timeout_sec must be positive, got %f", timeout_sec);
+        cleanup_resources();
+        return 1;
+    }
+    
+    // Use a practical limit for timeouts (1 hour = 3600 seconds)
+    const double MAX_TIMEOUT_SEC = 3600.0;
+    if (timeout_sec > MAX_TIMEOUT_SEC)
+    {
+        ROS_FATAL("timeout_sec too large: %f (max: %.1f seconds)", timeout_sec, MAX_TIMEOUT_SEC);
+        cleanup_resources();
+        return 1;
+    }
+    
     // Main loop variables
     ros::Rate rate(rate_hz);
     pps_seq_t last_assert_seq = 0;
     pps_seq_t last_clear_seq = 0;
-    struct timespec timeout = {static_cast<time_t>(timeout_sec), 0};
+    
+    // Safe conversion with bounds checking
+    time_t timeout_sec_int = static_cast<time_t>(timeout_sec);
+    long timeout_nsec = static_cast<long>((timeout_sec - timeout_sec_int) * 1000000000L);
+    
+    // Ensure nanoseconds are within valid range [0, 999999999]
+    if (timeout_nsec < 0) timeout_nsec = 0;
+    if (timeout_nsec > 999999999L) timeout_nsec = 999999999L;
+    
+    struct timespec timeout = {timeout_sec_int, timeout_nsec};
     
     ROS_INFO("Starting PPS monitoring loop");
     
