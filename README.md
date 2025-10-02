@@ -1,6 +1,6 @@
 # ROS Time Reference from PPS/DCD Trigger
 
-Publish precise `sensor_msgs/TimeReference` from **kernel-level PPS on DCD** (IMU trigger, GPS-disciplined clock) on **Ubuntu 20.04 / ROS Noetic**.  
+Publish precise `sensor_msgs/TimeReference` from **kernel-level PPS on DCD** (Sensor trigger (IMU, LIDAR, etc.) to GPS-disciplined clock). Current implementation targets ROS Noetic / Ubuntu 20.04.
 **Keywords:** ROS Noetic, PPS, DCD, IMU, GPS, timestamp, time sync, `sensor_msgs/TimeReference`, Ubuntu 20.04, PPSAPI, chrony.
 
 
